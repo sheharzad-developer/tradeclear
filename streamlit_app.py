@@ -25,33 +25,59 @@ try:
 except Exception:
     pass
 
-C = {"navy": "#0f2d52", "blue": "#1565c0", "green": "#1a7f44",
-     "amber": "#d99a00", "red": "#d04437", "grey": "#c4cbd6"}
+C = {"navy": "#0f172a", "blue": "#2563eb", "green": "#16a34a",
+     "amber": "#d97706", "red": "#dc2626", "grey": "#cbd5e1"}
 
 st.markdown("""
 <style>
-  .block-container { padding-top: 2rem; max-width: 1180px; }
-  .hero { background: linear-gradient(110deg,#0f2d52 0%,#13477f 55%,#1565c0 100%);
-          color:#fff; padding:24px 30px; border-radius:16px; margin-bottom:20px; }
-  .hero h1 { margin:0; font-size:27px; font-weight:800; letter-spacing:-.01em; }
-  .hero p  { margin:5px 0 0; font-size:14px; opacity:.85; }
-  .hero .pill { display:inline-block; background:rgba(255,255,255,.16);
-                padding:3px 12px; border-radius:20px; font-size:12px; font-weight:600;
-                margin-top:10px; }
-  div[data-testid="stMetric"] { background:#fff; border:1px solid #e8edf4;
-        border-radius:14px; padding:16px 18px; box-shadow:0 1px 2px rgba(16,40,80,.04); }
-  div[data-testid="stMetricValue"] { font-size:24px; font-weight:800; color:#0f2d52; }
-  .chip { padding:11px 14px; border-radius:12px; font-size:13px; font-weight:600;
-          text-align:center; line-height:1.3; }
-  .chip.red{background:#fdecea;color:#c0392b;} .chip.amber{background:#fdf6e3;color:#9a7400;}
-  .chip.green{background:#e9f8ef;color:#1a7f44;} .chip.blue{background:#eaf2fd;color:#1565c0;}
-  .flagcard { border-radius:10px; padding:9px 13px; margin-bottom:8px; font-size:13px; }
-  .flagcard.red{background:#fdecea;border-left:3px solid #d04437;}
-  .flagcard.amber{background:#fdf6e3;border-left:3px solid #d99a00;}
-  .flagcard.blue{background:#eaf2fd;border-left:3px solid #1565c0;}
-  .flagcard.green{background:#e9f8ef;border-left:3px solid #1a7f44;}
-  .stTabs [data-baseweb="tab"] { font-weight:600; }
-  .footer { color:#9aa3b2; font-size:12px; border-top:1px solid #e8edf4;
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  html, body, .stApp, [data-testid="stMarkdownContainer"], button, input, select {
+        font-family: 'Inter', -apple-system, Segoe UI, sans-serif !important; }
+  .stApp { background: #f4f6fb; }
+  /* hide Streamlit chrome for an app (not 'tool') feel */
+  [data-testid="stHeader"] { background: transparent; height: 0; }
+  [data-testid="stToolbar"], #MainMenu, footer { display: none; }
+  .block-container { padding-top: 1.4rem; max-width: 1200px; }
+
+  /* dark enterprise nav rail */
+  section[data-testid="stSidebar"] { background: #0f172a; border-right: 1px solid #1e293b; }
+  section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"],
+  section[data-testid="stSidebar"] label,
+  section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2,
+  section[data-testid="stSidebar"] h3 { color: #cbd5e1 !important; }
+
+  /* slim header bar instead of a marketing hero */
+  .hero { background:#fff; border:1px solid #e7ecf3; padding:18px 24px; border-radius:16px;
+          margin-bottom:18px; box-shadow:0 1px 3px rgba(15,23,42,.04);
+          display:flex; align-items:center; justify-content:space-between; }
+  .hero h1 { margin:0; font-size:22px; font-weight:800; color:#0f172a; letter-spacing:-.02em; }
+  .hero p  { margin:3px 0 0; font-size:13px; color:#64748b; }
+  .hero .pill { display:inline-block; background:#ecfdf3; color:#16a34a;
+                padding:5px 13px; border-radius:20px; font-size:12px; font-weight:700; }
+
+  /* modern KPI cards */
+  div[data-testid="stMetric"] { background:#fff; border:1px solid #e7ecf3;
+        border-radius:16px; padding:18px 20px; box-shadow:0 1px 3px rgba(15,23,42,.05); }
+  div[data-testid="stMetricLabel"] p { font-size:12px; font-weight:600; color:#64748b;
+        text-transform:uppercase; letter-spacing:.04em; }
+  div[data-testid="stMetricValue"] { font-size:25px; font-weight:800; color:#0f172a; }
+
+  .chip { padding:12px 14px; border-radius:14px; font-size:13px; font-weight:600;
+          text-align:center; line-height:1.3; border:1px solid transparent; }
+  .chip.red{background:#fef2f2;color:#b91c1c;border-color:#fee2e2;}
+  .chip.amber{background:#fffbeb;color:#b45309;border-color:#fef3c7;}
+  .chip.green{background:#f0fdf4;color:#15803d;border-color:#dcfce7;}
+  .chip.blue{background:#eff6ff;color:#1d4ed8;border-color:#dbeafe;}
+  .flagcard { border-radius:12px; padding:11px 14px; margin-bottom:8px; font-size:13px;
+              background:#fff; border:1px solid #eef1f6; }
+  .flagcard.red{border-left:4px solid #dc2626;} .flagcard.amber{border-left:4px solid #d97706;}
+  .flagcard.blue{border-left:4px solid #2563eb;} .flagcard.green{border-left:4px solid #16a34a;}
+
+  /* modern tabs */
+  .stTabs [data-baseweb="tab-list"] { gap:6px; border-bottom:1px solid #e7ecf3; }
+  .stTabs [data-baseweb="tab"] { font-weight:600; padding:8px 16px; color:#64748b; }
+  .stTabs [aria-selected="true"] { color:#2563eb !important; }
+  .footer { color:#94a3b8; font-size:12px; border-top:1px solid #e7ecf3;
             padding-top:12px; margin-top:26px; }
 </style>
 """, unsafe_allow_html=True)
@@ -165,9 +191,11 @@ with st.sidebar:
 # --------------------------------------------------------------------------- #
 st.markdown("""
 <div class="hero">
-  <h1>🛳️ TradeClear</h1>
-  <p>AI trade-compliance copilot — classify, optimize duty, flag risk, track tariffs.</p>
-  <span class="pill">● AI engine online · North America</span>
+  <div>
+    <h1>🛳️ TradeClear</h1>
+    <p>AI trade-compliance copilot — classify · optimize duty · flag risk · track tariffs</p>
+  </div>
+  <span class="pill">● AI engine online</span>
 </div>
 """, unsafe_allow_html=True)
 
