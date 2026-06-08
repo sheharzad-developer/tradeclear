@@ -1,0 +1,7 @@
+streamlit
+pandas
+fastapi
+uvicorn[standard]
+python-multipart
+python-dotenv
+openai
