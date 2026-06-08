@@ -2,6 +2,7 @@ from retriever import retrieve_candidates
 from ranker import rank
 from duty import estimate_duty
 from compliance import check_compliance
+from tariffs import affected_changes
 from hs_data import CODE_INDEX
 
 DISCLAIMER = ("This report is AI-assisted decision-support for review by a licensed "
@@ -73,6 +74,7 @@ def build_report(product):
         "code_status": code_status,
         "duty_estimate": duty,
         "leakage": _leakage(product, ranked["final"]),
+        "tariff_alerts": affected_changes(ranked["final"], product.get("customs_value")),
         "assumptions": _assumptions(product, ranked),
         "disclaimer": DISCLAIMER,
     }

@@ -90,7 +90,11 @@ def build_insights(reports):
     mism = [r for r in reports if r["code_status"] == "mismatch"]
     fta = [r for r in reports if "potentially" in r["duty_estimate"].get("fta_flag", "")]
     risk = [r for r in reports if r["compliance"]["level"] in ("high", "medium")]
+    tariff = [r for r in reports if r.get("tariff_alerts")]
     items = []
+    if tariff:
+        items.append(("amber", f"📈 <b>{len(tariff)} product(s)</b> are affected by recent "
+                              f"tariff changes — duty exposure has moved. See Tariff Watch."))
     if mism:
         items.append(("red", f"⚠️ <b>{len(mism)} product(s)</b> differ from the current "
                              f"HS code — potential over/under-payment. Review before next entry."))
@@ -211,8 +215,9 @@ for sev, text in build_insights(reports):
 # --------------------------------------------------------------------------- #
 # Four use-case tabs
 # --------------------------------------------------------------------------- #
-tab1, tab2, tab3, tab4 = st.tabs([
-    "🧠  Classification", "💵  Duty & FTA", "🛡️  Compliance Risk", "📋  Audit Packet"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "🧠  Classification", "💵  Duty & FTA", "🛡️  Compliance Risk",
+    "📈  Tariff Watch", "📋  Audit Packet"])
 
 # ---- 1. Classification -----------------------------------------------------
 with tab1:
@@ -306,8 +311,35 @@ with tab3:
                "classification discrepancy). Not a substitute for formal sanctions / "
                "denied-party screening.")
 
-# ---- 4. Audit Packet -------------------------------------------------------
+# ---- 4. Tariff Watch -------------------------------------------------------
 with tab4:
+    st.markdown("**Continuous monitoring:** recent & upcoming tariff changes mapped to "
+                "*your* products — the recurring value (we alert you when duty moves).")
+    affected = [r for r in reports if r.get("tariff_alerts")]
+    total_impact = sum(a["annual_impact"] or 0 for r in reports
+                       for a in r.get("tariff_alerts", []))
+    m1, m2 = st.columns(2)
+    m1.metric("Products affected by tariff changes", len(affected))
+    m2.metric("New annual duty exposure (est.)", fmt_money(total_impact))
+    st.divider()
+    if not affected:
+        st.success("No tracked tariff changes affect this batch.")
+    for r in affected:
+        st.markdown(f"**{r['sku']} — {r['product_summary']}**  · HS `{r['final_hs_code']}`")
+        for a in r["tariff_alerts"]:
+            up = a["delta"] > 0
+            sev = "red" if up else "green"
+            arrow = "▲" if up else "▼"
+            impact = (f" · est. {'+' if up else ''}${a['annual_impact']:,.0f}/yr"
+                      if a["annual_impact"] is not None else "")
+            st.markdown(f"<div class='insight {sev}'>{arrow} <b>{a['label']}</b> — "
+                        f"duty {'+' if up else ''}{a['delta']*100:.1f}% "
+                        f"(effective {a['effective']}, {a['status']}){impact}</div>",
+                        unsafe_allow_html=True)
+    st.caption("⚠️ Illustrative tariff changes for demo purposes — not live tariff data.")
+
+# ---- 5. Audit Packet -------------------------------------------------------
+with tab5:
     st.markdown("Generate an **audit-ready justification packet** for any product — "
                 "classification reasoning, sources, duty, and compliance review in one document.")
     skus = [r["sku"] or f"row-{i}" for i, r in enumerate(reports)]
