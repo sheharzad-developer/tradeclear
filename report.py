@@ -1,6 +1,8 @@
 from retriever import retrieve_candidates
 from ranker import rank
 from duty import estimate_duty
+from compliance import check_compliance
+from hs_data import CODE_INDEX
 
 DISCLAIMER = ("This report is AI-assisted decision-support for review by a licensed "
               "customs broker. It is not a customs ruling or legal advice. The importer "
@@ -19,8 +21,30 @@ def _assumptions(product, ranked):
     return notes
 
 
+def _leakage(product, final_code):
+    """Illustrative duty leakage vs. the current code (US rate)."""
+    current = product.get("current_hs_code")
+    cv = product.get("customs_value")
+    if not current or not final_code or current == final_code or not cv:
+        return None
+    cur, sug = CODE_INDEX.get(current), CODE_INDEX.get(final_code)
+    if not cur or not sug:
+        return None
+    cur_rate, sug_rate = cur.get("us_duty_rate"), sug.get("us_duty_rate")
+    if cur_rate is None or sug_rate is None:
+        return None
+    diff = cur_rate - sug_rate                 # positive => currently overpaying
+    per_shipment = round(diff * cv, 2)
+    return {
+        "per_shipment": per_shipment,
+        "annual_estimate": round(per_shipment * 12, 2),
+        "direction": "overpayment" if diff > 0 else "underpayment",
+        "basis": "vs. current code · US rate · assumes ~monthly shipments (illustrative)",
+    }
+
+
 def build_report(product):
-    """Full per-SKU pipeline: retrieve -> rank (mock AI) -> duty -> assemble."""
+    """Full per-SKU pipeline: retrieve -> rank (mock AI) -> duty -> risk -> assemble."""
     candidates = retrieve_candidates(product.get("description"), product.get("material"))
     ranked = rank(product, candidates)
     duty = estimate_duty(ranked["final"], product.get("origin"),
@@ -38,7 +62,7 @@ def build_report(product):
     desc = product.get("description") or ""
     summary = desc.strip().capitalize()[:120] or "Unspecified product"
 
-    return {
+    report = {
         "sku": product.get("sku"),
         "product_summary": summary,
         "hs_candidates": ranked["candidates"],
@@ -48,9 +72,53 @@ def build_report(product):
         "current_hs_code": current,
         "code_status": code_status,
         "duty_estimate": duty,
+        "leakage": _leakage(product, ranked["final"]),
         "assumptions": _assumptions(product, ranked),
         "disclaimer": DISCLAIMER,
     }
+    report["compliance"] = check_compliance(product, report)
+    return report
+
+
+def build_audit_packet(r):
+    """One-click audit-ready justification bundle (Markdown) for a single product."""
+    duty = r["duty_estimate"]
+    us = duty.get("us") or {}
+    ca = duty.get("ca") or {}
+    lines = [
+        f"# Audit Packet — {r['sku'] or 'Product'}",
+        f"**Product:** {r['product_summary']}",
+        "",
+        "## 1. Classification",
+        f"- **Suggested HS code:** {r['final_hs_code'] or 'n/a'} "
+        f"(confidence: {r['confidence']})",
+        f"- **Current code on file:** {r['current_hs_code'] or '— none —'}",
+    ]
+    if r["code_status"] == "mismatch":
+        lines.append(f"- ⚠️ **Discrepancy:** declared code differs from suggested code.")
+    lines.append("")
+    lines.append("## 2. Classification reasoning (audit trail)")
+    for c in r["hs_candidates"]:
+        lines.append(f"- `{c['code']}` ({c['confidence']}) — {c['reason']}")
+        lines.append(f"  - *Source:* {c['source']}")
+    lines += [
+        "",
+        "## 3. Duty assessment (illustrative)",
+        f"- USA: {us.get('rate_pct', '–')}%  ·  est. duty "
+        f"{('$'+format(us['estimated_duty'],',.2f')) if us.get('estimated_duty') is not None else '–'}",
+        f"- Canada: {ca.get('rate_pct', '–')}%  ·  est. duty "
+        f"{('$'+format(ca['estimated_duty'],',.2f')) if ca.get('estimated_duty') is not None else '–'}",
+        f"- FTA: {duty.get('fta_flag', '')}",
+        "",
+        "## 4. Compliance review",
+        f"- Risk level: **{r['compliance']['level'].upper()}**",
+    ]
+    for f in r["compliance"]["flags"]:
+        lines.append(f"- [{f['severity'].upper()}] {f['message']}")
+    if not r["compliance"]["flags"]:
+        lines.append("- No flags raised.")
+    lines += ["", "---", f"_{r['disclaimer']}_"]
+    return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------
