@@ -39,12 +39,12 @@ st.markdown("""
   [data-testid="stToolbar"], #MainMenu, footer { display: none; }
   .block-container { padding-top: 1.4rem; max-width: 1200px; }
 
-  /* dark enterprise nav rail */
-  section[data-testid="stSidebar"] { background: #0f172a; border-right: 1px solid #1e293b; }
+  /* clean light nav rail */
+  section[data-testid="stSidebar"] { background: #ffffff; border-right: 1px solid #e7ecf3; }
   section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"],
   section[data-testid="stSidebar"] label,
   section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2,
-  section[data-testid="stSidebar"] h3 { color: #cbd5e1 !important; }
+  section[data-testid="stSidebar"] h3 { color: #334155 !important; }
 
   /* slim header bar instead of a marketing hero */
   .hero { background:#fff; border:1px solid #e7ecf3; padding:18px 24px; border-radius:16px;
