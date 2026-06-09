@@ -4,6 +4,7 @@ from duty import estimate_duty
 from compliance import check_compliance
 from tariffs import affected_changes
 from hs_data import CODE_INDEX
+from settings import ASSUMED_SHIPMENTS_PER_YEAR
 
 DISCLAIMER = ("This report is AI-assisted decision-support for review by a licensed "
               "customs broker. It is not a customs ruling or legal advice. The importer "
@@ -38,9 +39,10 @@ def _leakage(product, final_code):
     per_shipment = round(diff * cv, 2)
     return {
         "per_shipment": per_shipment,
-        "annual_estimate": round(per_shipment * 12, 2),
+        "annual_estimate": round(per_shipment * ASSUMED_SHIPMENTS_PER_YEAR, 2),
         "direction": "overpayment" if diff > 0 else "underpayment",
-        "basis": "vs. current code · US rate · assumes ~monthly shipments (illustrative)",
+        "basis": f"vs. current code · US rate · ~{ASSUMED_SHIPMENTS_PER_YEAR} "
+                 f"shipments/yr (illustrative)",
     }
 
 

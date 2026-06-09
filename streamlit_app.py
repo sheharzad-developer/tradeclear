@@ -167,7 +167,7 @@ MUG-004,Ceramic stoneware coffee mug,ceramic,CN,1500,6911.10.10.00
 CHR-005,USB power adapter wall charger,plastic,MX,3000,
 SOFA-006,Upholstered armchair with wooden frame,wood,CA,12000,
 STL-013,Stainless steel kitchen knife set,steel,RU,7000,
-WID-008,Mystery industrial gadget thingamajig,,CN,1000,
+BRD-014,Bamboo composite serving board,bamboo,CN,2000,
 """
 
 

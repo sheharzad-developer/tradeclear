@@ -143,12 +143,13 @@ def _mock_rank(product, candidates):
 
     out = []
     for score, overlap, c in top:
-        matched = ", ".join(overlap) if overlap else "general description"
+        attrs = ", ".join(overlap) if overlap else "the product description"
         out.append({
             "code": c["code"],
             "confidence": confidence,
-            "reason": f"Matched on: {matched}. Aligns with '{c['description']}'.",
-            "source": f"{c['code']} — {c['description']}",
+            "reason": f"Product attributes ({attrs}) align with the HS heading text "
+                      f"“{c['description']}”.",
+            "source": f"HS {c['code']} — {c['description']}",
         })
 
     return {"candidates": out, "final": top[0][2]["code"],

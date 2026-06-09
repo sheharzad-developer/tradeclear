@@ -3,6 +3,7 @@ Maps recent/upcoming duty changes to a product by HS chapter, with $ impact.
 This is the 'continuous monitoring / system of record' hook (recurring value)."""
 
 from hs_data import CODE_INDEX
+from settings import ASSUMED_SHIPMENTS_PER_YEAR
 
 # Illustrative tariff changes by HS chapter. delta = change to the US duty rate.
 TARIFF_CHANGES = [
@@ -29,6 +30,7 @@ def affected_changes(final_code, customs_value):
     out = []
     for c in TARIFF_CHANGES:
         if c["chapter"] == chapter:
-            impact = round(c["delta"] * customs_value * 12, 2) if customs_value else None
+            impact = (round(c["delta"] * customs_value * ASSUMED_SHIPMENTS_PER_YEAR, 2)
+                      if customs_value else None)
             out.append({**c, "annual_impact": impact})
     return out
