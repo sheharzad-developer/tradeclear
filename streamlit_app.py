@@ -16,6 +16,7 @@ import plotly.graph_objects as go
 
 from report import build_report, build_audit_packet
 from hs_data import HS_DATA
+from settings import ASSUMED_SHIPMENTS_PER_YEAR
 
 st.set_page_config(page_title="TradeClear — AI Trade Compliance Copilot",
                    page_icon="🛳️", layout="wide")
@@ -46,14 +47,24 @@ st.markdown("""
   section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2,
   section[data-testid="stSidebar"] h3 { color: #334155 !important; }
 
-  /* slim header bar instead of a marketing hero */
-  .hero { background:#fff; border:1px solid #e7ecf3; padding:18px 24px; border-radius:16px;
-          margin-bottom:18px; box-shadow:0 1px 3px rgba(15,23,42,.04);
-          display:flex; align-items:center; justify-content:space-between; }
-  .hero h1 { margin:0; font-size:22px; font-weight:800; color:#0f172a; letter-spacing:-.02em; }
-  .hero p  { margin:3px 0 0; font-size:13px; color:#64748b; }
-  .hero .pill { display:inline-block; background:#ecfdf3; color:#16a34a;
-                padding:5px 13px; border-radius:20px; font-size:12px; font-weight:700; }
+  /* money-first gradient hero */
+  .hero { background:linear-gradient(120deg,#0b1e3b 0%,#1e3a8a 55%,#2563eb 100%);
+          color:#fff; padding:22px 30px; border-radius:18px; margin-bottom:16px;
+          box-shadow:0 10px 28px rgba(30,58,138,.20);
+          display:flex; align-items:center; justify-content:space-between; gap:16px; }
+  .hero h1 { margin:0; font-size:24px; font-weight:800; color:#fff; letter-spacing:-.02em; }
+  .hero p  { margin:4px 0 0; font-size:13px; color:#c7d6f0; max-width:640px; }
+  .hero .pill { display:inline-block; background:rgba(255,255,255,.15); color:#d1fae5;
+                padding:6px 14px; border-radius:20px; font-size:12px; font-weight:700;
+                white-space:nowrap; }
+  /* savings highlight band */
+  .savings { background:linear-gradient(120deg,#065f46 0%,#10b981 100%); color:#fff;
+             border-radius:18px; padding:20px 28px; margin-bottom:18px;
+             box-shadow:0 10px 28px rgba(16,185,129,.20);
+             display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .savings .big { font-size:38px; font-weight:800; letter-spacing:-.02em; }
+  .savings .lbl { font-size:15px; font-weight:600; opacity:.95; margin-left:6px; }
+  .savings .sub { font-size:13px; opacity:.9; margin-left:auto; text-align:right; }
 
   /* modern KPI cards */
   div[data-testid="stMetric"] { background:#fff; border:1px solid #e7ecf3;
@@ -193,9 +204,10 @@ st.markdown("""
 <div class="hero">
   <div>
     <h1>🛳️ TradeClear</h1>
-    <p>AI trade-compliance copilot — classify · optimize duty · flag risk · track tariffs</p>
+    <p>The duty-savings platform for cross-border brands — find what you overpaid,
+       pay less on what's next, never get surprised by a tariff again.</p>
   </div>
-  <span class="pill">● AI engine online</span>
+  <span class="pill">● we only win when you save</span>
 </div>
 """, unsafe_allow_html=True)
 
@@ -232,13 +244,27 @@ leakage = sum(r["leakage"]["annual_estimate"] for r in reports
               if r.get("leakage") and r["leakage"]["direction"] == "overpayment")
 tariff_exposure = sum(a["annual_impact"] or 0 for r in reports
                       for a in r.get("tariff_alerts", []))
+fta_savings = sum(((r["duty_estimate"].get("us") or {}).get("estimated_duty") or 0)
+                  for r in reports
+                  if "potentially" in r["duty_estimate"].get("fta_flag", "")) \
+              * ASSUMED_SHIPMENTS_PER_YEAR
+savings_total = leakage + fta_savings
+
+st.markdown(f"""
+<div class="savings">
+  <div><span class="big">{fmt_money(savings_total)}</span>
+       <span class="lbl">in potential duty savings identified</span></div>
+  <div class="sub">{fmt_money(tariff_exposure)}/yr tariff exposure to manage<br>
+       across {total} products analyzed</div>
+</div>
+""", unsafe_allow_html=True)
 
 k = st.columns(5)
-k[0].metric("Products", total)
-k[1].metric("Compliance flags", risk_count)
-k[2].metric("Code mismatches", mismatches)
-k[3].metric("Duty leakage / yr", fmt_money(leakage))
-k[4].metric("Tariff exposure / yr", fmt_money(tariff_exposure))
+k[0].metric("Recoverable / yr", fmt_money(leakage))
+k[1].metric("FTA opportunities", fta_count)
+k[2].metric("Tariff exposure / yr", fmt_money(tariff_exposure))
+k[3].metric("Compliance flags", risk_count)
+k[4].metric("Products", total)
 
 chips = insight_chips(reports)
 cc = st.columns(len(chips))
